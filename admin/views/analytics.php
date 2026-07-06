@@ -1,0 +1,35 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+$links = Ledger_Links_CPT::get_all();
+$tracker = Ledger_Tracker::instance();
+?>
+<div class="wrap ledger-wrap">
+    <h1>Analytics</h1>
+    <p>Numbers below exclude known bots and your own admin clicks by default — see Settings to change that. This is the honest count, not the inflated one.</p>
+
+    <?php if ( empty( $links ) ) : ?>
+        <p>No links yet.</p>
+    <?php else : foreach ( $links as $link ) :
+        $breakdown = $tracker->get_breakdown( $link->id, 30 );
+        $devices = array( 'desktop' => 0, 'mobile' => 0 );
+        $browsers = array();
+        foreach ( $breakdown as $row ) {
+            if ( isset( $devices[ $row->device ] ) ) { $devices[ $row->device ]++; }
+            $browsers[ $row->browser ] = ( $browsers[ $row->browser ] ?? 0 ) + 1;
+        }
+        ?>
+        <div class="ledger-card">
+            <h2><?php echo esc_html( $link->title ?: $link->slug ); ?> <span class="description">/<?php echo esc_html( $link->slug ); ?></span></h2>
+            <p><strong><?php echo esc_html( count( $breakdown ) ); ?></strong> clean clicks in the last 30 days.</p>
+            <p>Device split — Desktop: <?php echo esc_html( $devices['desktop'] ); ?>, Mobile: <?php echo esc_html( $devices['mobile'] ); ?></p>
+            <p>Browsers — <?php
+                $parts = array();
+                foreach ( $browsers as $b => $c ) { $parts[] = esc_html( "$b: $c" ); }
+                echo $parts ? implode( ', ', $parts ) : 'no data yet';
+            ?></p>
+        </div>
+    <?php endforeach; endif; ?>
+</div>
